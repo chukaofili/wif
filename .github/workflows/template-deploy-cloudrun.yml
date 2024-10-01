@@ -20,7 +20,7 @@ on:
         type: string
       gcp_region:
         type: string
-        default: "europe-west3"
+        default: "europe-west2"
       gcp_gar_repository:
         type: string
         default: "wif"
