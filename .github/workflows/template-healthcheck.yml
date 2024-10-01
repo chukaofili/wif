@@ -1,0 +1,21 @@
+name: Healthcheck
+
+on:
+  workflow_call:
+    inputs:
+      target_url:
+        required: true
+        type: string
+  workflow_dispatch:
+
+jobs:
+  healthcheck:
+    name: Healthcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - name: Healthcheck
+        run: curl --fail-with-body --connect-timeout 20 --header User-Agent:GoogleHC/1.0 ${{ inputs.target_url }}

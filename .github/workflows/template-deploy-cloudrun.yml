@@ -1,0 +1,95 @@
+name: CloudRun Deployment
+
+on:
+  workflow_call:
+    inputs:
+      gcp_project_id:
+        required: false
+        type: string
+      gcp_project_number:
+        required: false
+        type: string
+      gcp_identity_pool:
+        required: false
+        type: string
+      gcp_identity_pool_provider:
+        required: false
+        type: string
+      gcp_service_account_email:
+        required: false
+        type: string
+      gcp_region:
+        type: string
+        default: "europe-west3"
+      gcp_gar_repository:
+        type: string
+        default: "wif"
+      service_name:
+        required: true
+        type: string
+      service_port:
+        type: number
+        default: 3000
+      service_cpu:
+        type: number
+        default: 1
+      service_memory:
+        type: string
+        default: "512Mb"
+      service_min_instances:
+        type: number
+        default: 1
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: "read"
+      id-token: "write"
+    outputs:
+      healthcheck_url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ inputs.gcp_project_id }}
+          workload_identity_provider: "projects/${{ inputs.gcp_project_number }}/locations/global/workloadIdentityPools/${{ inputs.gcp_identity_pool }}/providers/${{ inputs.gcp_identity_pool_provider }}"
+          # service_account: ${{ inputs.gcp_service_account_email }}
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Export Service Image Url
+        id: image
+        run: echo "service_image_url=${{ inputs.gcp_region }}-docker.pkg.dev/${{ inputs.gcp_project_id }}/${{ inputs.gcp_gar_repository }}/${{ inputs.service_name }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Authenticate to Google Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ inputs.gcp_region }}-docker.pkg.dev
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image.outputs.service_image_url }}
+          provenance: false
+          cache-from: type=gha,scope=${{ inputs.service_name }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.service_name }}
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          project_id: ${{ inputs.gcp_project_id }}
+          region: ${{ inputs.gcp_region }}
+          service: ${{ inputs.service_name }}
+          image: ${{ steps.image.outputs.service_image_url }}
+          flags: "--port ${{ inputs.service_port }} --memory ${{ inputs.service_memory }} --cpu ${{ inputs.service_cpu }} --ingress all --execution-environment gen2 --allow-unauthenticated --network default --subnet default --vpc-egress private-ranges-only --min-instances ${{ inputs.service_min_instances }}"
+          no_traffic: false
+  healthcheck:
+    name: Healthcheck
+    needs: [deploy]
+    uses: ./.github/workflows/template-healthcheck.yml
+    with:
+      target_url: ${{ needs.deploy.outputs.healthcheck_url }}
