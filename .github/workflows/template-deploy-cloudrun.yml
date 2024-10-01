@@ -35,7 +35,7 @@ on:
         default: 1
       service_memory:
         type: string
-        default: "512Mb"
+        default: "512m"
       service_min_instances:
         type: number
         default: 1
