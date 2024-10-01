@@ -15,10 +15,10 @@ jobs:
     name: Deploy Services
     uses: ./.github/workflows/template-deploy-cloudrun.yml
     with:
-      service_name: helloworld
+      service_name: hello-world
       gcp_project_id: chuka-wif
       gcp_project_number: 896486946376
-      gcp_identity_pool: oidc
+      gcp_identity_pool: oidc-pool
       gcp_identity_pool_provider: github
       # gcp_service_account_email:
-      gcp_gar_repository: helloworld
+      gcp_gar_repository: hello-world
