@@ -5,9 +5,9 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #    - main
   workflow_dispatch:
 
 jobs:
@@ -16,9 +16,9 @@ jobs:
     uses: ./.github/workflows/template-deploy-cloudrun.yml
     with:
       service_name: hello-world
-      gcp_project_id: chuka-wif
-      gcp_project_number: 896486946376
-      gcp_identity_pool: oidc-pool
-      gcp_identity_pool_provider: github
-      gcp_service_account_email: wif-513@chuka-wif.iam.gserviceaccount.com
-      gcp_gar_repository: hello-world
+      gcp_project_id: GCP_PROJECT_ID
+      gcp_project_number: GCP_PROJECT_NUMBER
+      gcp_identity_pool: GCP_IDENTITY_POOL
+      gcp_identity_pool_provider: GCP_IDENTITY_POOL_PROVIDER
+      gcp_service_account_email: GCP_SERVICE_ACCOUNT_EMAIL
+      gcp_gar_repository: GCP_GAR_REPOSITORY
